@@ -233,7 +233,7 @@
   .paper{
     background:var(--paper);
     max-width:800px;margin:0 auto;
-    padding:52px 56px 56px;
+    padding:48px 52px 52px;
     box-shadow:var(--shadow-paper);
     border:1px solid rgba(20,18,13,.07);
     border-radius:2px;
@@ -241,121 +241,169 @@
     min-height:min(1100px, calc(100vh - 80px));
   }
   .paper::before{
-    content:"";position:absolute;inset:12px;border:1px solid rgba(20,18,13,.045);pointer-events:none;border-radius:1px;
+    content:"";position:absolute;inset:12px;border:1px solid rgba(20,18,13,.04);pointer-events:none;border-radius:1px;
   }
 
   .inv-head{
-    display:grid;grid-template-columns:1fr auto;gap:32px;
-    padding-bottom:28px;border-bottom:2px solid var(--ink);
-    margin-bottom:32px;
+    display:grid;grid-template-columns:1fr minmax(200px,280px);gap:28px;align-items:start;
+    padding-bottom:26px;border-bottom:1px solid var(--rule);
+    margin-bottom:24px;
   }
-  .inv-logo img{max-height:64px;max-width:220px;object-fit:contain;display:block;margin-bottom:10px}
+  .inv-from{min-width:0}
+  .inv-logo img{max-height:56px;max-width:200px;object-fit:contain;display:block;margin-bottom:12px}
   .inv-logo .placeholder{
-    width:56px;height:56px;border:1px solid var(--line);
-    border-radius:4px;
+    width:52px;height:52px;border:1px solid var(--line);
+    border-radius:6px;
     display:flex;align-items:center;justify-content:center;
-    font-family:'Fraunces',serif;font-size:26px;font-style:italic;
-    margin-bottom:10px;background:rgba(20,18,13,.02);
+    font-family:'Fraunces',serif;font-size:24px;font-style:italic;
+    margin-bottom:12px;background:rgba(20,18,13,.025);
   }
   .inv-company{
-    font-family:'Fraunces',serif;font-size:21px;font-weight:500;letter-spacing:-0.015em;
-    margin-bottom:6px;line-height:1.2;
+    font-family:'Fraunces',serif;font-size:20px;font-weight:500;letter-spacing:-0.02em;
+    margin-bottom:8px;line-height:1.25;
   }
-  .inv-company-meta{font-size:12.5px;color:var(--muted);line-height:1.6;white-space:pre-line}
+  .inv-company-meta{font-size:12px;color:var(--muted);line-height:1.65;white-space:pre-line}
 
-  .inv-title{text-align:right}
-  .inv-title h2{
-    font-family:'Fraunces',serif;font-size:clamp(36px,5vw,46px);font-weight:400;font-style:italic;
-    letter-spacing:-0.035em;line-height:.92;margin-bottom:8px;color:var(--ink);
+  .inv-invoice-box{
+    border:1px solid var(--rule);
+    border-radius:8px;
+    padding:16px 18px;
+    background:rgba(20,18,13,.02);
+    text-align:left;
   }
-  .inv-title .tag{
-    font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.2em;
-    text-transform:uppercase;color:var(--muted);
+  .inv-invoice-box h2{
+    font-family:'Fraunces',serif;font-size:26px;font-weight:500;font-style:italic;
+    letter-spacing:-0.03em;line-height:1;margin:0 0 14px;
+    padding-bottom:12px;border-bottom:1px solid var(--rule);
+    color:var(--ink);
   }
-  .inv-title .num{
-    font-family:'JetBrains Mono',monospace;font-size:13px;margin-top:6px;font-variant-numeric:tabular-nums;
+  .inv-kv{margin:0;display:flex;flex-direction:column;gap:10px}
+  .inv-kv > div{
+    display:grid;grid-template-columns:minmax(72px,1fr) minmax(0,1.4fr);gap:12px;align-items:baseline;
+    font-size:12.5px;line-height:1.4;
+  }
+  .inv-kv dt{
+    margin:0;font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
+  }
+  .inv-kv dd{
+    margin:0;font-family:'JetBrains Mono',monospace;font-size:12.5px;font-variant-numeric:tabular-nums;color:var(--ink);text-align:right;word-break:break-word;
   }
 
-  .inv-meta{
-    display:grid;grid-template-columns:1fr 1fr 1fr;gap:28px;
-    margin-bottom:32px;
+  .inv-meta-panel{
+    display:grid;grid-template-columns:1.35fr 1fr;gap:16px;
+    margin-bottom:28px;
   }
-  .meta-block h4{
-    font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.18em;
-    text-transform:uppercase;color:var(--muted);margin-bottom:8px;
+  .meta-card{
+    border:1px solid var(--rule);
+    border-radius:8px;
+    padding:14px 16px;
+    background:rgba(20,18,13,.015);
+    min-height:100%;
   }
-  .meta-block p{font-size:13px;line-height:1.6;white-space:pre-line}
-  .meta-block .name{font-family:'Fraunces',serif;font-size:17px;margin-bottom:4px;font-weight:500;letter-spacing:-0.01em}
-
-  /* Table */
-  .inv-table{width:100%;border-collapse:collapse;margin-bottom:28px}
-  .inv-table thead th{
-    text-align:left;padding:10px 8px;
-    font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.16em;
-    text-transform:uppercase;color:var(--muted);
-    border-bottom:2px solid var(--ink);
+  .meta-card h3{
+    margin:0 0 10px;
+    font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
     font-weight:500;
   }
-  .inv-table thead th.num{text-align:right;padding-right:4px}
-  .inv-table tbody td{
-    padding:14px 8px;border-bottom:1px solid var(--rule);
-    font-size:13.5px;vertical-align:top;
+  .meta-card .name{
+    font-family:'Fraunces',serif;font-size:16px;font-weight:500;margin:0 0 6px;letter-spacing:-0.01em;line-height:1.3;color:var(--ink);
   }
-  .inv-table tbody tr:last-child td{border-bottom:none}
-  .inv-table tbody td.num{text-align:right;font-variant-numeric:tabular-nums;font-family:'JetBrains Mono',monospace;font-size:12.5px;padding-right:4px}
-  .inv-table .item-title{font-family:'Fraunces',serif;font-size:15.5px;font-weight:500;margin-bottom:4px;letter-spacing:-0.01em}
-  .inv-table .item-desc{font-size:12px;color:var(--muted);line-height:1.55;white-space:pre-line}
-  .inv-table .item-mode{
-    display:inline-block;margin-top:6px;
+  .meta-card p:not(.name){margin:0;font-size:12.5px;line-height:1.65;color:var(--ink);white-space:pre-line}
+  .meta-card--project p{margin:0;font-size:12.5px;line-height:1.6;color:var(--ink);word-wrap:break-word}
+
+  .inv-section-title{
+    font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);
+    margin:0 0 10px;font-weight:500;
+  }
+
+  /* Table */
+  .table-wrap{
+    border:1px solid var(--rule);
+    border-radius:8px;
+    overflow:hidden;
+    margin-bottom:28px;
+  }
+  .inv-table{width:100%;border-collapse:collapse}
+  .inv-table thead th{
+    text-align:left;padding:11px 14px;
     font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);
+    background:rgba(20,18,13,.04);
+    border-bottom:1px solid var(--rule);
+    font-weight:500;
+  }
+  .inv-table thead th.num{text-align:right;padding-right:16px}
+  .inv-table tbody td{
+    padding:14px 14px;border-bottom:1px solid var(--rule);
+    font-size:13px;vertical-align:top;
+    background:var(--paper);
+  }
+  .inv-table tbody tr:nth-child(even) td{background:rgba(20,18,13,.018)}
+  .inv-table tbody tr:last-child td{border-bottom:none}
+  .inv-table tbody td.num{text-align:right;font-variant-numeric:tabular-nums;font-family:'JetBrains Mono',monospace;font-size:12px;padding-right:16px;color:var(--ink)}
+  .inv-table .item-title{font-family:'Fraunces',serif;font-size:15px;font-weight:500;margin-bottom:6px;letter-spacing:-0.01em;line-height:1.25}
+  .inv-table .item-desc{font-size:11.5px;color:var(--muted);line-height:1.55;white-space:pre-line}
+  .inv-table .item-mode{
+    display:inline-block;margin-top:8px;
+    font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.12em;
     text-transform:uppercase;color:var(--accent);
+    padding:2px 6px;border-radius:3px;background:rgba(184,61,12,.08);
   }
 
   /* Totals */
   .inv-totals{
-    display:grid;grid-template-columns:1fr minmax(240px,300px);gap:36px;
-    margin-bottom:32px;align-items:start;
+    display:grid;grid-template-columns:1fr minmax(248px,300px);gap:32px;
+    margin-bottom:28px;align-items:start;
+  }
+  .notes{
+    border:1px solid var(--rule);
+    border-radius:8px;
+    padding:14px 16px;
+    background:rgba(20,18,13,.012);
   }
   .notes h4{
-    font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.18em;
-    text-transform:uppercase;color:var(--muted);margin-bottom:10px;
+    font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--muted);margin:0 0 10px;font-weight:500;
   }
-  .notes p{font-size:13px;line-height:1.65;color:var(--ink);white-space:pre-line}
+  .notes p{font-size:12.5px;line-height:1.65;color:var(--ink);white-space:pre-line;margin:0}
   .totals-box{
     border:1px solid var(--rule);
-    border-radius:4px;
-    padding:4px 16px 12px;
-    background:rgba(20,18,13,.015);
+    border-radius:8px;
+    padding:12px 16px 14px;
+    background:rgba(20,18,13,.025);
   }
   .totals-row{
-    display:flex;justify-content:space-between;align-items:baseline;gap:16px;
-    padding:8px 0;
-    font-size:13.5px;
+    display:flex;justify-content:space-between;align-items:baseline;gap:20px;
+    padding:7px 0;
+    font-size:13px;
   }
-  .totals-row.sub{border-top:1px solid var(--rule);margin-top:4px;padding-top:10px}
-  .totals-row span:last-child{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;font-size:13px}
+  .totals-row:first-child{padding-top:2px}
+  .totals-row.sub{border-top:1px solid var(--rule);margin-top:6px;padding-top:11px}
+  .totals-row span:first-child{color:var(--muted)}
+  .totals-row span:last-child{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;font-size:12.5px;color:var(--ink)}
   .totals-row.grand{
-    margin-top:4px;padding:14px 0 6px;
+    margin-top:8px;padding:12px 0 4px;
     border-top:2px solid var(--ink);
-    font-family:'Fraunces',serif;font-size:21px;font-weight:500;
-    letter-spacing:-0.015em;
+    font-family:'Fraunces',serif;font-size:20px;font-weight:500;
+    letter-spacing:-0.02em;
   }
-  .totals-row.grand span:last-child{font-family:'Fraunces',serif;font-size:22px}
+  .totals-row.grand span:first-child{color:var(--ink);font-family:'Fraunces',serif;font-size:18px;font-weight:500}
+  .totals-row.grand span:last-child{font-family:'Fraunces',serif;font-size:21px}
 
   /* Footer */
   .inv-footer{
-    display:grid;grid-template-columns:1fr 1fr;gap:36px;
-    padding-top:24px;border-top:1px solid var(--rule);
-    font-size:12.5px;color:var(--muted);
+    display:grid;grid-template-columns:1fr 1fr;gap:28px;
+    padding-top:22px;border-top:1px solid var(--rule);
+    font-size:12px;color:var(--muted);
   }
-  .inv-footer h4{
-    font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.18em;
-    text-transform:uppercase;color:var(--muted);margin-bottom:8px;
+  .inv-footer-col h4{
+    font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--muted);margin:0 0 8px;font-weight:500;
   }
-  .inv-footer .pay{color:var(--ink);white-space:pre-line;line-height:1.65}
+  .inv-footer .pay{color:var(--ink);white-space:pre-line;line-height:1.65;font-size:12.5px}
   .thank{
-    font-family:'Fraunces',serif;font-style:italic;font-size:17px;color:var(--ink);
-    margin-top:16px;line-height:1.4;
+    font-family:'Fraunces',serif;font-style:italic;font-size:16px;color:var(--ink);
+    margin-top:14px;line-height:1.45;
   }
 
   /* Print */
@@ -367,7 +415,11 @@
     .preview-wrap{padding:0;background:#fff;max-height:none;overflow:visible}
     .paper{box-shadow:none;border:none;max-width:100%;padding:0;margin:0;min-height:auto;border-radius:0}
     .paper::before{display:none}
-    .totals-box{border:none;background:transparent;padding:0}
+    .table-wrap{border:none;border-radius:0}
+    .inv-table tbody td,.inv-table tbody tr:nth-child(even) td{background:#fff}
+    .inv-table thead th{background:#f5f4f0}
+    .meta-card,.inv-invoice-box,.notes,.totals-box{border-color:rgba(20,18,13,.12)}
+    .totals-box{background:transparent}
   }
 
   /* Responsive */
@@ -381,12 +433,15 @@
     }
     .preview-wrap{padding:20px;max-height:none}
     .paper{padding:36px 28px 40px;min-height:auto}
-    .inv-head{grid-template-columns:1fr;gap:20px}
-    .inv-title{text-align:left}
-    .inv-meta{grid-template-columns:1fr;gap:20px}
-    .inv-totals{grid-template-columns:1fr;gap:24px}
-    .inv-footer{grid-template-columns:1fr;gap:20px}
+    .inv-head{grid-template-columns:1fr;gap:18px}
+    .inv-meta-panel{grid-template-columns:1fr;gap:12px}
+    .inv-totals{grid-template-columns:1fr;gap:20px}
+    .inv-footer{grid-template-columns:1fr;gap:22px}
     .row.three{grid-template-columns:1fr 1fr}
+  }
+  @media (max-width: 640px){
+    .table-wrap{overflow:auto;-webkit-overflow-scrolling:touch}
+    .inv-table{min-width:520px}
   }
   @media (max-width: 520px){
     .row.two,.row.three{grid-template-columns:1fr}
@@ -543,68 +598,69 @@ UPI: heliostudio@hdfcbank</textarea>
   <main class="preview-wrap">
     <div class="paper" id="paper">
       <div class="inv-head">
-        <div>
+        <div class="inv-from">
           <div class="inv-logo" id="pvLogo">
             <div class="placeholder" id="pvPlaceholder">H</div>
           </div>
           <div class="inv-company" id="pvCompany">Helio Studio</div>
           <div class="inv-company-meta" id="pvCompanyMeta"></div>
         </div>
-        <div class="inv-title">
+        <div class="inv-invoice-box">
           <h2>Invoice</h2>
-          <div class="tag">No.</div>
-          <div class="num" id="pvNumber">INV-2026-0412</div>
+          <dl class="inv-kv">
+            <div><dt>Number</dt><dd id="pvNumber">INV-2026-0412</dd></div>
+            <div><dt>Issued</dt><dd id="pvIssue"></dd></div>
+            <div><dt>Due</dt><dd id="pvDue"></dd></div>
+          </dl>
         </div>
       </div>
 
-      <div class="inv-meta">
-        <div class="meta-block">
-          <h4>Billed To</h4>
+      <div class="inv-meta-panel">
+        <div class="meta-card">
+          <h3>Bill to</h3>
           <p class="name" id="pvToName"></p>
           <p id="pvToAddress"></p>
         </div>
-        <div class="meta-block">
-          <h4>Dates</h4>
-          <p><strong>Issued:</strong> <span id="pvIssue"></span></p>
-          <p><strong>Due:</strong> <span id="pvDue"></span></p>
-        </div>
-        <div class="meta-block">
-          <h4>Project</h4>
+        <div class="meta-card meta-card--project">
+          <h3>Project / reference</h3>
           <p id="pvProject"></p>
         </div>
       </div>
 
-      <table class="inv-table">
-        <thead>
-          <tr>
-            <th style="width:50%">Description</th>
-            <th class="num" style="width:14%">Qty / Hrs</th>
-            <th class="num" style="width:18%">Rate</th>
-            <th class="num" style="width:18%">Amount</th>
-          </tr>
-        </thead>
-        <tbody id="pvItems"></tbody>
-      </table>
+      <p class="inv-section-title" aria-hidden="true">Line items</p>
+      <div class="table-wrap">
+        <table class="inv-table">
+          <thead>
+            <tr>
+              <th style="width:50%">Description</th>
+              <th class="num" style="width:14%">Qty / Hrs</th>
+              <th class="num" style="width:18%">Rate</th>
+              <th class="num" style="width:18%">Amount</th>
+            </tr>
+          </thead>
+          <tbody id="pvItems"></tbody>
+        </table>
+      </div>
 
       <div class="inv-totals">
         <div class="notes">
-          <h4>Notes &amp; Terms</h4>
+          <h4>Notes &amp; terms</h4>
           <p id="pvNotes"></p>
         </div>
         <div class="totals-box">
           <div class="totals-row"><span>Subtotal</span><span id="pvSubtotal"></span></div>
           <div class="totals-row" id="rowDiscount" style="display:none"><span>Discount (<span id="pvDiscRate"></span>%)</span><span id="pvDiscount"></span></div>
           <div class="totals-row sub" id="rowTax"><span><span id="pvTaxLabel">GST</span> (<span id="pvTaxRate"></span>%)</span><span id="pvTax"></span></div>
-          <div class="totals-row grand"><span>Total Due</span><span id="pvTotal"></span></div>
+          <div class="totals-row grand"><span>Total due</span><span id="pvTotal"></span></div>
         </div>
       </div>
 
       <div class="inv-footer">
-        <div>
+        <div class="inv-footer-col">
           <h4>Payment</h4>
           <div class="pay" id="pvPayment"></div>
         </div>
-        <div>
+        <div class="inv-footer-col">
           <h4>From</h4>
           <div class="pay" id="pvFromFooter"></div>
           <div class="thank" id="pvThanks"></div>
