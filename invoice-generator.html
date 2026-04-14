@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ledger — Invoice Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&family=JetBrains+Mono:wght@400;500;600&family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f0ebe2;
+    --bg-deep:#e8e2d6;
+    --ink:#14120d;
+    --paper:#fefdfb;
+    --muted:#5c5a52;
+    --line:rgba(20,18,13,.14);
+    --accent:#b83d0c;
+    --accent-soft:rgba(184,61,12,.12);
+    --rule:rgba(20,18,13,.12);
+    --radius:10px;
+    --radius-sm:6px;
+    --shadow-paper:0 1px 2px rgba(20,18,13,.04), 0 24px 48px -16px rgba(20,18,13,.14), 0 8px 16px -8px rgba(20,18,13,.08);
+    --panel-pad:24px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--ink);font-family:'Inter Tight',sans-serif;font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  button,input,select,textarea{font:inherit;color:inherit}
+
+  .app{
+    display:grid;
+    grid-template-columns:minmax(340px,440px) 1fr;
+    min-height:100vh;
+  }
+
+  /* ---- FORM PANEL ---- */
+  .panel{
+    --panel-edge:rgba(20,18,13,.1);
+    background:linear-gradient(165deg, var(--bg) 0%, var(--bg-deep) 100%);
+    border-right:1px solid var(--panel-edge);
+    display:flex;
+    flex-direction:column;
+    height:100vh;
+    max-height:100vh;
+    min-height:0;
+    overflow:hidden;
+    padding:0;
+  }
+  .panel-body{
+    flex:1 1 auto;
+    min-height:0;
+    overflow-y:auto;
+    overflow-x:hidden;
+    padding:var(--panel-pad);
+    padding-bottom:28px;
+    -webkit-overflow-scrolling:touch;
+  }
+  .brand{
+    display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
+    padding-bottom:20px;margin-bottom:22px;
+    border-bottom:1px solid var(--line);
+  }
+  .brand h1{
+    font-family:'Fraunces',serif;
+    font-weight:500;
+    font-size:clamp(26px,4vw,32px);
+    letter-spacing:-0.025em;
+    font-style:italic;
+    line-height:1.05;
+  }
+  .brand h1 span{font-style:normal;font-weight:400}
+  .brand small{
+    font-family:'JetBrains Mono',monospace;
+    font-size:9px;text-transform:uppercase;letter-spacing:.18em;
+    color:var(--muted);white-space:nowrap;padding-bottom:4px;
+  }
+
+  .section{
+    margin-bottom:18px;
+    padding:18px 18px 16px;
+    background:rgba(254,253,251,.55);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:0 1px 0 rgba(255,255,255,.6) inset;
+  }
+  .section-label{
+    font-family:'JetBrains Mono',monospace;
+    font-size:9.5px;text-transform:uppercase;letter-spacing:.18em;
+    color:var(--muted);
+    display:flex;align-items:center;gap:10px;
+    margin-bottom:14px;
+    font-weight:500;
+  }
+  .section-label::after{
+    content:"";flex:1;height:1px;background:linear-gradient(90deg, var(--rule), transparent);
+  }
+
+  .row{display:grid;gap:6px;margin-bottom:12px}
+  .row:last-child{margin-bottom:0}
+  .row.two{grid-template-columns:1fr 1fr;gap:12px}
+  .row.three{grid-template-columns:1fr 1fr 1fr;gap:10px}
+
+  label{
+    display:block;
+    font-family:'JetBrains Mono',monospace;
+    font-size:9px;text-transform:uppercase;letter-spacing:.12em;
+    color:var(--muted);margin-bottom:4px;
+  }
+  input,select,textarea{
+    width:100%;
+    background:rgba(255,255,255,.75);
+    border:1px solid var(--line);
+    padding:9px 11px;
+    font-size:14px;
+    outline:none;
+    transition:border-color .15s, box-shadow .15s, background .15s;
+    border-radius:var(--radius-sm);
+  }
+  input:hover,select:hover,textarea:hover{background:#fff;border-color:rgba(20,18,13,.22)}
+  input:focus,select:focus,textarea:focus{
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px var(--accent-soft);
+    background:#fff;
+  }
+  textarea{resize:vertical;min-height:72px;line-height:1.5}
+  select{appearance:none;-webkit-appearance:none;cursor:pointer;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='none' stroke='%2314120d' stroke-width='1.2' d='M1 1l4 4 4-4'/></svg>");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
+
+  /* Logo uploader */
+  .logo-drop{
+    border:1px dashed rgba(20,18,13,.28);
+    border-radius:var(--radius-sm);
+    padding:20px 16px;text-align:center;cursor:pointer;
+    background:rgba(255,255,255,.5);
+    display:flex;flex-direction:column;align-items:center;gap:8px;
+    transition:background .15s, border-color .15s, box-shadow .15s;
+  }
+  .logo-drop:hover{border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px var(--accent-soft)}
+  .logo-drop img{max-height:56px;max-width:100%;object-fit:contain}
+  .logo-drop .hint{
+    font-family:'JetBrains Mono',monospace;
+    font-size:9.5px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;line-height:1.4;
+  }
+  .logo-drop.has-logo{padding:12px}
+  .logo-actions{display:flex;gap:8px;margin-top:10px;justify-content:center;flex-wrap:wrap}
+  .logo-actions button{
+    font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;
+    background:rgba(255,255,255,.8);border:1px solid var(--line);padding:7px 12px;cursor:pointer;border-radius:var(--radius-sm);
+    transition:background .15s, color .15s, border-color .15s;
+  }
+  .logo-actions button:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+  /* Items */
+  .item{
+    background:rgba(255,255,255,.65);
+    border:1px solid var(--line);
+    border-radius:var(--radius-sm);
+    padding:14px 14px 12px;
+    margin-bottom:10px;
+    position:relative;
+  }
+  .item:last-of-type{margin-bottom:0}
+  .item-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px}
+  .item-index{
+    font-family:'Fraunces',serif;font-style:italic;font-size:17px;color:var(--ink);
+  }
+  .item-type{
+    display:inline-flex;background:var(--accent-soft);
+    border:1px solid rgba(20,18,13,.1);
+    border-radius:4px;
+    font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+  }
+  .item-type select{border:none;padding:5px 8px;background:transparent;cursor:pointer;border-radius:4px}
+  .item-remove{
+    background:rgba(255,255,255,.6);border:1px solid var(--line);border-radius:4px;cursor:pointer;
+    font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);
+    padding:5px 8px;line-height:1;
+    transition:color .15s, border-color .15s, background .15s;
+  }
+  .item-remove:hover{color:var(--accent);border-color:var(--accent);background:#fff}
+
+  .add-btn{
+    width:100%;
+    margin-top:12px;
+    background:rgba(255,255,255,.5);
+    border:1px dashed rgba(20,18,13,.28);
+    padding:12px;
+    font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+    cursor:pointer;
+    transition:background .15s, color .15s, border-color .15s, border-style .15s;
+    border-radius:var(--radius-sm);
+    color:var(--muted);
+  }
+  .add-btn:hover{
+    background:var(--ink);color:var(--paper);border-color:var(--ink);border-style:solid;
+  }
+
+  .actions{
+    flex:0 0 auto;
+    position:relative;
+    z-index:2;
+    margin:0;
+    padding:14px var(--panel-pad);
+    padding-bottom:max(14px, env(safe-area-inset-bottom, 0px));
+    background:rgba(240,235,226,.96);
+    backdrop-filter:saturate(140%) blur(12px);
+    -webkit-backdrop-filter:saturate(140%) blur(12px);
+    border-top:1px solid var(--line);
+    display:flex;gap:10px;
+    box-shadow:0 -10px 28px -14px rgba(20,18,13,.14);
+  }
+  .actions button{
+    flex:1;padding:13px 14px;
+    font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+    border:1px solid rgba(20,18,13,.18);cursor:pointer;border-radius:var(--radius-sm);
+    transition:background .15s, color .15s, border-color .15s, transform .1s;
+  }
+  .actions button:active{transform:translateY(1px)}
+  .btn-primary{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .btn-primary:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn-ghost{background:rgba(255,255,255,.55)}
+  .btn-ghost:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+  /* ---- PREVIEW ---- */
+  .preview-wrap{
+    padding:clamp(24px,4vw,48px);
+    overflow-y:auto;
+    max-height:100vh;
+    background:
+      radial-gradient(ellipse 80% 50% at 15% 0%, rgba(184,61,12,.07), transparent 55%),
+      radial-gradient(ellipse 70% 45% at 90% 100%, rgba(20,18,13,.06), transparent 50%),
+      var(--bg);
+  }
+  .paper{
+    background:var(--paper);
+    max-width:800px;margin:0 auto;
+    padding:52px 56px 56px;
+    box-shadow:var(--shadow-paper);
+    border:1px solid rgba(20,18,13,.07);
+    border-radius:2px;
+    position:relative;
+    min-height:min(1100px, calc(100vh - 80px));
+  }
+  .paper::before{
+    content:"";position:absolute;inset:12px;border:1px solid rgba(20,18,13,.045);pointer-events:none;border-radius:1px;
+  }
+
+  .inv-head{
+    display:grid;grid-template-columns:1fr auto;gap:32px;
+    padding-bottom:28px;border-bottom:2px solid var(--ink);
+    margin-bottom:32px;
+  }
+  .inv-logo img{max-height:64px;max-width:220px;object-fit:contain;display:block;margin-bottom:10px}
+  .inv-logo .placeholder{
+    width:56px;height:56px;border:1px solid var(--line);
+    border-radius:4px;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Fraunces',serif;font-size:26px;font-style:italic;
+    margin-bottom:10px;background:rgba(20,18,13,.02);
+  }
+  .inv-company{
+    font-family:'Fraunces',serif;font-size:21px;font-weight:500;letter-spacing:-0.015em;
+    margin-bottom:6px;line-height:1.2;
+  }
+  .inv-company-meta{font-size:12.5px;color:var(--muted);line-height:1.6;white-space:pre-line}
+
+  .inv-title{text-align:right}
+  .inv-title h2{
+    font-family:'Fraunces',serif;font-size:clamp(36px,5vw,46px);font-weight:400;font-style:italic;
+    letter-spacing:-0.035em;line-height:.92;margin-bottom:8px;color:var(--ink);
+  }
+  .inv-title .tag{
+    font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--muted);
+  }
+  .inv-title .num{
+    font-family:'JetBrains Mono',monospace;font-size:13px;margin-top:6px;font-variant-numeric:tabular-nums;
+  }
+
+  .inv-meta{
+    display:grid;grid-template-columns:1fr 1fr 1fr;gap:28px;
+    margin-bottom:32px;
+  }
+  .meta-block h4{
+    font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:8px;
+  }
+  .meta-block p{font-size:13px;line-height:1.6;white-space:pre-line}
+  .meta-block .name{font-family:'Fraunces',serif;font-size:17px;margin-bottom:4px;font-weight:500;letter-spacing:-0.01em}
+
+  /* Table */
+  .inv-table{width:100%;border-collapse:collapse;margin-bottom:28px}
+  .inv-table thead th{
+    text-align:left;padding:10px 8px;
+    font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--muted);
+    border-bottom:2px solid var(--ink);
+    font-weight:500;
+  }
+  .inv-table thead th.num{text-align:right;padding-right:4px}
+  .inv-table tbody td{
+    padding:14px 8px;border-bottom:1px solid var(--rule);
+    font-size:13.5px;vertical-align:top;
+  }
+  .inv-table tbody tr:last-child td{border-bottom:none}
+  .inv-table tbody td.num{text-align:right;font-variant-numeric:tabular-nums;font-family:'JetBrains Mono',monospace;font-size:12.5px;padding-right:4px}
+  .inv-table .item-title{font-family:'Fraunces',serif;font-size:15.5px;font-weight:500;margin-bottom:4px;letter-spacing:-0.01em}
+  .inv-table .item-desc{font-size:12px;color:var(--muted);line-height:1.55;white-space:pre-line}
+  .inv-table .item-mode{
+    display:inline-block;margin-top:6px;
+    font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--accent);
+  }
+
+  /* Totals */
+  .inv-totals{
+    display:grid;grid-template-columns:1fr minmax(240px,300px);gap:36px;
+    margin-bottom:32px;align-items:start;
+  }
+  .notes h4{
+    font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:10px;
+  }
+  .notes p{font-size:13px;line-height:1.65;color:var(--ink);white-space:pre-line}
+  .totals-box{
+    border:1px solid var(--rule);
+    border-radius:4px;
+    padding:4px 16px 12px;
+    background:rgba(20,18,13,.015);
+  }
+  .totals-row{
+    display:flex;justify-content:space-between;align-items:baseline;gap:16px;
+    padding:8px 0;
+    font-size:13.5px;
+  }
+  .totals-row.sub{border-top:1px solid var(--rule);margin-top:4px;padding-top:10px}
+  .totals-row span:last-child{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;font-size:13px}
+  .totals-row.grand{
+    margin-top:4px;padding:14px 0 6px;
+    border-top:2px solid var(--ink);
+    font-family:'Fraunces',serif;font-size:21px;font-weight:500;
+    letter-spacing:-0.015em;
+  }
+  .totals-row.grand span:last-child{font-family:'Fraunces',serif;font-size:22px}
+
+  /* Footer */
+  .inv-footer{
+    display:grid;grid-template-columns:1fr 1fr;gap:36px;
+    padding-top:24px;border-top:1px solid var(--rule);
+    font-size:12.5px;color:var(--muted);
+  }
+  .inv-footer h4{
+    font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:8px;
+  }
+  .inv-footer .pay{color:var(--ink);white-space:pre-line;line-height:1.65}
+  .thank{
+    font-family:'Fraunces',serif;font-style:italic;font-size:17px;color:var(--ink);
+    margin-top:16px;line-height:1.4;
+  }
+
+  /* Print */
+  @media print{
+    @page{size:A4;margin:14mm}
+    html,body{background:#fff}
+    .panel,.preview-wrap > *:not(.paper){display:none}
+    .app{grid-template-columns:1fr}
+    .preview-wrap{padding:0;background:#fff;max-height:none;overflow:visible}
+    .paper{box-shadow:none;border:none;max-width:100%;padding:0;margin:0;min-height:auto;border-radius:0}
+    .paper::before{display:none}
+    .totals-box{border:none;background:transparent;padding:0}
+  }
+
+  /* Responsive */
+  @media (max-width: 1000px){
+    .app{grid-template-columns:1fr}
+    .panel{
+      height:auto;
+      max-height:none;
+      border-right:none;
+      border-bottom:1px solid var(--line);
+    }
+    .preview-wrap{padding:20px;max-height:none}
+    .paper{padding:36px 28px 40px;min-height:auto}
+    .inv-head{grid-template-columns:1fr;gap:20px}
+    .inv-title{text-align:left}
+    .inv-meta{grid-template-columns:1fr;gap:20px}
+    .inv-totals{grid-template-columns:1fr;gap:24px}
+    .inv-footer{grid-template-columns:1fr;gap:20px}
+    .row.three{grid-template-columns:1fr 1fr}
+  }
+  @media (max-width: 520px){
+    .row.two,.row.three{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============== FORM PANEL ============== -->
+  <aside class="panel">
+    <div class="panel-body">
+    <div class="brand">
+      <h1><span>Led</span>ger</h1>
+      <small>Invoice Generator</small>
+    </div>
+
+    <!-- LOGO + FROM -->
+    <div class="section">
+      <div class="section-label">Your Business</div>
+
+      <label>Logo</label>
+      <div class="logo-drop" id="logoDrop">
+        <div id="logoContent">
+          <div class="hint">Click to upload · PNG / JPG / SVG</div>
+        </div>
+        <input type="file" id="logoInput" accept="image/*" style="display:none" />
+      </div>
+      <div class="logo-actions" id="logoActions" style="display:none">
+        <button type="button" id="logoChange">Change</button>
+        <button type="button" id="logoRemove">Remove</button>
+      </div>
+
+      <div class="row">
+        <label>Company Name</label>
+        <input type="text" id="fromName" value="Helio Studio" />
+      </div>
+      <div class="row">
+        <label>Address / Details</label>
+        <textarea id="fromAddress">221B Koramangala, 5th Block
+Bengaluru, KA 560095
+GSTIN: 29ABCDE1234F1Z5
+hello@heliostudio.io</textarea>
+      </div>
+    </div>
+
+    <!-- BILL TO -->
+    <div class="section">
+      <div class="section-label">Bill To</div>
+      <div class="row">
+        <label>Client Name</label>
+        <input type="text" id="toName" value="Nimbus Technologies Pvt Ltd" />
+      </div>
+      <div class="row">
+        <label>Client Address / Contact</label>
+        <textarea id="toAddress">14 Indiranagar 100ft Road
+Bengaluru, KA 560038
+accounts@nimbustech.in</textarea>
+      </div>
+    </div>
+
+    <!-- INVOICE META -->
+    <div class="section">
+      <div class="section-label">Invoice Details</div>
+      <div class="row two">
+        <div>
+          <label>Invoice #</label>
+          <input type="text" id="invNumber" value="INV-2026-0412" />
+        </div>
+        <div>
+          <label>Currency</label>
+          <select id="currency">
+            <option value="INR">₹ INR</option>
+            <option value="USD">$ USD</option>
+            <option value="EUR">€ EUR</option>
+            <option value="GBP">£ GBP</option>
+            <option value="AUD">A$ AUD</option>
+            <option value="CAD">C$ CAD</option>
+            <option value="SGD">S$ SGD</option>
+            <option value="AED">AED</option>
+          </select>
+        </div>
+      </div>
+      <div class="row two">
+        <div>
+          <label>Issue Date</label>
+          <input type="date" id="issueDate" />
+        </div>
+        <div>
+          <label>Due Date</label>
+          <input type="date" id="dueDate" />
+        </div>
+      </div>
+      <div class="row">
+        <label>Project / Reference</label>
+        <input type="text" id="project" value="Q2 Platform Engineering Engagement" />
+      </div>
+    </div>
+
+    <!-- LINE ITEMS -->
+    <div class="section">
+      <div class="section-label">Line Items</div>
+      <div id="items"></div>
+      <button type="button" class="add-btn" id="addItem">＋ Add line item</button>
+    </div>
+
+    <!-- ADJUSTMENTS -->
+    <div class="section">
+      <div class="section-label">Adjustments</div>
+      <div class="row three">
+        <div>
+          <label>Tax %</label>
+          <input type="number" id="taxRate" value="18" min="0" step="0.01" />
+        </div>
+        <div>
+          <label>Tax Label</label>
+          <input type="text" id="taxLabel" value="GST" />
+        </div>
+        <div>
+          <label>Discount %</label>
+          <input type="number" id="discount" value="0" min="0" step="0.01" />
+        </div>
+      </div>
+    </div>
+
+    <!-- PAYMENT + NOTES -->
+    <div class="section">
+      <div class="section-label">Payment &amp; Notes</div>
+      <div class="row">
+        <label>Payment Instructions</label>
+        <textarea id="payment">Bank: HDFC Bank · A/C: 501000XXXXXX
+IFSC: HDFC0001234 · Beneficiary: Helio Studio
+UPI: heliostudio@hdfcbank</textarea>
+      </div>
+      <div class="row">
+        <label>Notes / Terms</label>
+        <textarea id="notes">Net 15. Late payments accrue 1.5% monthly interest. Please reference the invoice number with your transfer.</textarea>
+      </div>
+      <div class="row">
+        <label>Closing Line</label>
+        <input type="text" id="thanks" value="Thank you for the continued partnership." />
+      </div>
+    </div>
+
+    </div>
+
+    <div class="actions">
+      <button class="btn-ghost" id="resetBtn" type="button">Reset</button>
+      <button class="btn-primary" id="printBtn" type="button">Download / Print</button>
+    </div>
+  </aside>
+
+  <!-- ============== PREVIEW ============== -->
+  <main class="preview-wrap">
+    <div class="paper" id="paper">
+      <div class="inv-head">
+        <div>
+          <div class="inv-logo" id="pvLogo">
+            <div class="placeholder" id="pvPlaceholder">H</div>
+          </div>
+          <div class="inv-company" id="pvCompany">Helio Studio</div>
+          <div class="inv-company-meta" id="pvCompanyMeta"></div>
+        </div>
+        <div class="inv-title">
+          <h2>Invoice</h2>
+          <div class="tag">No.</div>
+          <div class="num" id="pvNumber">INV-2026-0412</div>
+        </div>
+      </div>
+
+      <div class="inv-meta">
+        <div class="meta-block">
+          <h4>Billed To</h4>
+          <p class="name" id="pvToName"></p>
+          <p id="pvToAddress"></p>
+        </div>
+        <div class="meta-block">
+          <h4>Dates</h4>
+          <p><strong>Issued:</strong> <span id="pvIssue"></span></p>
+          <p><strong>Due:</strong> <span id="pvDue"></span></p>
+        </div>
+        <div class="meta-block">
+          <h4>Project</h4>
+          <p id="pvProject"></p>
+        </div>
+      </div>
+
+      <table class="inv-table">
+        <thead>
+          <tr>
+            <th style="width:50%">Description</th>
+            <th class="num" style="width:14%">Qty / Hrs</th>
+            <th class="num" style="width:18%">Rate</th>
+            <th class="num" style="width:18%">Amount</th>
+          </tr>
+        </thead>
+        <tbody id="pvItems"></tbody>
+      </table>
+
+      <div class="inv-totals">
+        <div class="notes">
+          <h4>Notes &amp; Terms</h4>
+          <p id="pvNotes"></p>
+        </div>
+        <div class="totals-box">
+          <div class="totals-row"><span>Subtotal</span><span id="pvSubtotal"></span></div>
+          <div class="totals-row" id="rowDiscount" style="display:none"><span>Discount (<span id="pvDiscRate"></span>%)</span><span id="pvDiscount"></span></div>
+          <div class="totals-row sub" id="rowTax"><span><span id="pvTaxLabel">GST</span> (<span id="pvTaxRate"></span>%)</span><span id="pvTax"></span></div>
+          <div class="totals-row grand"><span>Total Due</span><span id="pvTotal"></span></div>
+        </div>
+      </div>
+
+      <div class="inv-footer">
+        <div>
+          <h4>Payment</h4>
+          <div class="pay" id="pvPayment"></div>
+        </div>
+        <div>
+          <h4>From</h4>
+          <div class="pay" id="pvFromFooter"></div>
+          <div class="thank" id="pvThanks"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  // ----- State -----
+  const state = {
+    items: [
+      { type:'deliverable', title:'Platform Architecture Audit', desc:'Review of AWS IoT Core + Kinesis pipeline. Written report with findings and recommendations.', qty:1, rate:85000 },
+      { type:'hourly', title:'Backend Engineering', desc:'Spring Boot service refactor, Lambda container optimization.', qty:42, rate:3500 },
+      { type:'fixed', title:'Monthly Retainer — April', desc:'On-call infrastructure support & advisory.', qty:1, rate:60000 }
+    ]
+  };
+
+  const currencySymbols = {INR:'₹',USD:'$',EUR:'€',GBP:'£',AUD:'A$',CAD:'C$',SGD:'S$',AED:'AED '};
+  const typeLabels = {deliverable:'Deliverable',hourly:'Per Hour',fixed:'Fixed Fee',discount:'Discount'};
+
+  // ----- Helpers -----
+  const $ = id => document.getElementById(id);
+  const fmt = n => {
+    const cur = $('currency').value;
+    const sym = currencySymbols[cur] || '';
+    return sym + Number(n||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+  };
+  const fmtDate = d => {
+    if(!d) return '—';
+    const date = new Date(d);
+    return date.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  };
+
+  // ----- Logo -----
+  let logoDataUrl = null;
+  $('logoDrop').addEventListener('click', ()=> $('logoInput').click());
+  $('logoChange').addEventListener('click', e=>{e.stopPropagation(); $('logoInput').click()});
+  $('logoRemove').addEventListener('click', e=>{
+    e.stopPropagation();
+    logoDataUrl=null;
+    $('logoContent').innerHTML = '<div class="hint">Click to upload · PNG / JPG / SVG</div>';
+    $('logoDrop').classList.remove('has-logo');
+    $('logoActions').style.display='none';
+    render();
+  });
+  $('logoInput').addEventListener('change', e=>{
+    const f = e.target.files[0]; if(!f) return;
+    const r = new FileReader();
+    r.onload = ev=>{
+      logoDataUrl = ev.target.result;
+      $('logoContent').innerHTML = `<img src="${logoDataUrl}" alt="logo">`;
+      $('logoDrop').classList.add('has-logo');
+      $('logoActions').style.display='flex';
+      render();
+    };
+    r.readAsDataURL(f);
+  });
+
+  // ----- Items -----
+  function renderItems(){
+    const container = $('items');
+    container.innerHTML = '';
+    state.items.forEach((it, i)=>{
+      const el = document.createElement('div');
+      el.className = 'item';
+      const qtyLabel = it.type==='hourly' ? 'Hours' : it.type==='deliverable' ? 'Qty' : 'Units';
+      const rateLabel = it.type==='hourly' ? 'Rate / hr' : 'Rate';
+      el.innerHTML = `
+        <div class="item-head">
+          <span class="item-index">${String(i+1).padStart(2,'0')}</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="item-type">
+              <select data-k="type" data-i="${i}">
+                <option value="deliverable" ${it.type==='deliverable'?'selected':''}>Deliverable</option>
+                <option value="hourly" ${it.type==='hourly'?'selected':''}>Per Hour</option>
+                <option value="fixed" ${it.type==='fixed'?'selected':''}>Fixed Fee</option>
+              </select>
+            </span>
+            <button class="item-remove" data-rm="${i}" title="Remove">✕</button>
+          </div>
+        </div>
+        <div class="row">
+          <label>Title</label>
+          <input type="text" data-k="title" data-i="${i}" value="${escapeAttr(it.title)}" />
+        </div>
+        <div class="row">
+          <label>Description</label>
+          <textarea data-k="desc" data-i="${i}">${escapeHtml(it.desc||'')}</textarea>
+        </div>
+        <div class="row two">
+          <div>
+            <label>${qtyLabel}</label>
+            <input type="number" step="0.01" min="0" data-k="qty" data-i="${i}" value="${it.qty}" />
+          </div>
+          <div>
+            <label>${rateLabel}</label>
+            <input type="number" step="0.01" min="0" data-k="rate" data-i="${i}" value="${it.rate}" />
+          </div>
+        </div>
+      `;
+      container.appendChild(el);
+    });
+
+    container.querySelectorAll('[data-k]').forEach(input=>{
+      input.addEventListener('input', e=>{
+        const i = +e.target.dataset.i, k = e.target.dataset.k;
+        let v = e.target.value;
+        if(k==='qty'||k==='rate') v = parseFloat(v)||0;
+        state.items[i][k] = v;
+        if(k==='type') renderItems(); // relabel fields
+        render();
+      });
+    });
+    container.querySelectorAll('[data-rm]').forEach(b=>{
+      b.addEventListener('click', e=>{
+        const i = +e.target.dataset.rm;
+        state.items.splice(i,1);
+        if(state.items.length===0) state.items.push({type:'deliverable',title:'',desc:'',qty:1,rate:0});
+        renderItems(); render();
+      });
+    });
+  }
+
+  function escapeHtml(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
+  function escapeAttr(s){return (s||'').replace(/"/g,'&quot;')}
+
+  $('addItem').addEventListener('click', ()=>{
+    state.items.push({type:'deliverable',title:'New item',desc:'',qty:1,rate:0});
+    renderItems(); render();
+  });
+
+  // ----- Render preview -----
+  function render(){
+    // Logo
+    const logoWrap = $('pvLogo');
+    const companyName = $('fromName').value || 'Your Company';
+    if(logoDataUrl){
+      logoWrap.innerHTML = `<img src="${logoDataUrl}" alt="logo">`;
+    } else {
+      logoWrap.innerHTML = `<div class="placeholder">${(companyName[0]||'L').toUpperCase()}</div>`;
+    }
+
+    $('pvCompany').textContent = companyName;
+    $('pvCompanyMeta').textContent = $('fromAddress').value;
+    $('pvNumber').textContent = $('invNumber').value;
+    $('pvToName').textContent = $('toName').value;
+    $('pvToAddress').textContent = $('toAddress').value;
+    $('pvIssue').textContent = fmtDate($('issueDate').value);
+    $('pvDue').textContent = fmtDate($('dueDate').value);
+    $('pvProject').textContent = $('project').value || '—';
+    $('pvNotes').textContent = $('notes').value;
+    $('pvPayment').textContent = $('payment').value;
+    $('pvFromFooter').textContent = `${companyName}\n${$('fromAddress').value}`;
+    $('pvThanks').textContent = $('thanks').value;
+
+    // Items
+    const tbody = $('pvItems');
+    tbody.innerHTML = '';
+    let subtotal = 0;
+    state.items.forEach(it=>{
+      const amount = (parseFloat(it.qty)||0) * (parseFloat(it.rate)||0);
+      subtotal += amount;
+      const qtyDisplay = it.type==='hourly' ? `${it.qty} hr` : it.qty;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>
+          <div class="item-title">${escapeHtml(it.title||'Untitled')}</div>
+          ${it.desc?`<div class="item-desc">${escapeHtml(it.desc)}</div>`:''}
+          <div class="item-mode">${typeLabels[it.type]}</div>
+        </td>
+        <td class="num">${qtyDisplay}</td>
+        <td class="num">${fmt(it.rate)}${it.type==='hourly'?' /hr':''}</td>
+        <td class="num">${fmt(amount)}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    // Totals
+    const discRate = parseFloat($('discount').value)||0;
+    const taxRate = parseFloat($('taxRate').value)||0;
+    const discAmt = subtotal * discRate/100;
+    const afterDisc = subtotal - discAmt;
+    const taxAmt = afterDisc * taxRate/100;
+    const total = afterDisc + taxAmt;
+
+    $('pvSubtotal').textContent = fmt(subtotal);
+    if(discRate>0){
+      $('rowDiscount').style.display='flex';
+      $('pvDiscRate').textContent = discRate;
+      $('pvDiscount').textContent = '− ' + fmt(discAmt);
+    } else $('rowDiscount').style.display='none';
+
+    $('pvTaxLabel').textContent = $('taxLabel').value || 'Tax';
+    $('pvTaxRate').textContent = taxRate;
+    $('pvTax').textContent = fmt(taxAmt);
+    $('rowTax').style.display = taxRate>0 ? 'flex':'none';
+    $('pvTotal').textContent = fmt(total);
+  }
+
+  // Bind top-level inputs
+  ['fromName','fromAddress','toName','toAddress','invNumber','issueDate','dueDate','project','currency','taxRate','taxLabel','discount','payment','notes','thanks']
+    .forEach(id => $(id).addEventListener('input', render));
+
+  // Defaults for dates
+  const today = new Date();
+  $('issueDate').value = today.toISOString().slice(0,10);
+  const due = new Date(today); due.setDate(due.getDate()+15);
+  $('dueDate').value = due.toISOString().slice(0,10);
+
+  // Actions
+  $('printBtn').addEventListener('click', ()=> window.print());
+  $('resetBtn').addEventListener('click', ()=>{
+    if(!confirm('Reset all fields?')) return;
+    location.reload();
+  });
+
+  // Init
+  renderItems();
+  render();
+</script>
+</body>
+</html>
