@@ -23,11 +23,80 @@
     @media(max-width:640px){.table-wrap{overflow:auto;-webkit-overflow-scrolling:touch}.inv-table{min-width:520px}}@media(max-width:520px){.row.two,.row.three{grid-template-columns:1fr}}
   </style>
   <link rel="stylesheet" href="ui-ux.css">
+<style>
+/* Local invoice management layer */
+.app-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px}
+.app-toolbar button,.small-btn{border:1px solid var(--line);border-radius:8px;padding:8px 11px;background:#fff;cursor:pointer;font-size:12px}
+.app-toolbar button.primary{background:var(--ink);color:#fff}
+.management{margin:0 0 18px;padding:18px;background:rgba(255,255,255,.72);border:1px solid var(--line);border-radius:12px}
+.management h2{font-family:'Fraunces',serif;font-weight:500;font-size:21px;margin-bottom:12px}
+.metric-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-bottom:14px}
+.metric{padding:12px;background:rgba(255,255,255,.72);border:1px solid var(--line);border-radius:9px;min-width:0}
+.metric small{display:block;color:var(--muted);font:9px 'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.08em}
+.metric strong{display:block;margin-top:5px;font-size:16px;overflow-wrap:anywhere}
+.saved-row{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}
+.saved-row:last-child{border-bottom:0}
+.saved-main{min-width:0;display:flex;flex-direction:column}
+.saved-main strong{font-size:13px}.saved-main span{font-size:11px;color:var(--muted)}
+.saved-side{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.saved-side b{font-size:12px;white-space:nowrap}
+.status-pill{font-size:9px;text-transform:uppercase;letter-spacing:.06em;border-radius:99px;padding:4px 7px;background:#eee}
+.status-pill.paid{background:#dceee3;color:#205a38}.status-pill.overdue{background:#f8ded8;color:#8d2d17}.status-pill.partially-paid{background:#f5ebcf;color:#725515}.status-pill.issued{background:#e2e8f1;color:#314c70}.status-pill.void{background:#eee;color:#666}
+.empty-state{font-size:12px;color:var(--muted);padding:12px 0}
+.notice{position:sticky;top:8px;z-index:30;margin:8px 12px;padding:10px 13px;background:#1e1b16;color:white;border-radius:8px;font-size:12px;box-shadow:0 6px 20px #0002}
+.management .row{margin-bottom:9px}
+.management input,.management textarea{background:white}
+.management-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.management details summary{cursor:pointer;font-size:12px;font-weight:600;margin:6px 0 12px}
+@media(max-width:1000px){.metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.management-grid{grid-template-columns:1fr}}
+@media print{.management,.app-toolbar,.notice{display:none!important}}
+</style>
 </head>
 <body>
 <div class="app">
 <aside class="panel">
+<div class="notice" id="appNotice" role="status" hidden></div>
 <div class="panel-body">
+<div class="management">
+  <h2>Workspace</h2>
+  <div class="metric-grid">
+    <div class="metric"><small>Invoices</small><strong id="metricInvoices">0</strong></div>
+    <div class="metric"><small>Clients</small><strong id="metricClients">0</strong></div>
+    <div class="metric"><small>Issued value</small><strong id="metricIssued">₹0.00</strong></div>
+    <div class="metric"><small>Outstanding</small><strong id="metricOutstanding">₹0.00</strong></div>
+  </div>
+  <div class="app-toolbar">
+    <button class="primary" id="newInvoiceBtn" type="button">＋ New invoice</button>
+    <button id="saveBtn" type="button">Save draft</button>
+    <button id="issueBtn" type="button">Issue invoice</button>
+    <button id="backupBtn" type="button">Export backup</button>
+    <label class="small-btn" for="restoreInput">Import backup</label><input id="restoreInput" type="file" accept="application/json,.json" hidden>
+  </div>
+  <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Storage: this browser on this device · <span id="statusLabel">DRAFT</span></div>
+  <div class="management-grid">
+    <div>
+      <h2>Clients</h2>
+      <form id="clientForm">
+        <input type="hidden" id="clientEditId">
+        <div class="row"><label>Client name</label><input id="clientName" required placeholder="Client or company"></div>
+        <div class="row two"><div><label>Email</label><input id="clientEmail" type="email" placeholder="accounts@example.com"></div><div><label>Phone</label><input id="clientPhone" placeholder="+91…"></div></div>
+        <div class="row"><label>Billing address</label><textarea id="clientAddress" placeholder="Billing address"></textarea></div>
+        <button class="small-btn primary" id="saveClientBtn" type="submit">Save client</button>
+      </form>
+      <div style="margin-top:10px"><label>Use saved client in invoice</label><select id="clientSelect"><option value="">Choose a saved client…</option></select></div>
+    </div>
+    <div>
+      <h2>Invoice history</h2>
+      <div id="invoiceList"><p class="empty-state">Loading local records…</p></div>
+    </div>
+  </div>
+  <details>
+    <summary>Record a payment on the open issued invoice</summary>
+    <div class="row three"><div><label>Amount</label><input id="paymentAmount" type="number" min="0.01" step="0.01" placeholder="0.00"></div><div><label>Paid on</label><input id="paymentDate" type="date"></div><div><label>Method</label><select id="paymentMethod"><option>Bank transfer</option><option>UPI</option><option>Cash</option><option>Card</option><option>Other</option></select></div></div>
+    <div class="row"><label>Reference</label><input id="paymentReference" placeholder="Transaction reference (optional)"></div>
+    <button class="small-btn" id="recordPaymentBtn" type="button">Record payment</button>
+  </details>
+</div>
 <div class="brand"><h1><span>clear</span>-fee</h1><small>Invoice generator</small></div>
 <div class="section"><div class="section-label">Your Business</div><label>Logo</label><div class="logo-drop" id="logoDrop" tabindex="0" role="button" aria-label="Upload business logo"><div id="logoContent"><div class="hint">Click to upload · PNG / JPG / SVG</div></div><input type="file" id="logoInput" accept="image/*" style="display:none" /></div><div class="logo-actions" id="logoActions" style="display:none"><button type="button" id="logoChange">Change</button><button type="button" id="logoRemove">Remove</button></div><div class="row"><label>Company Name</label><input type="text" id="fromName" value="Helio Studio" /></div><div class="row"><label>Address / Details</label><textarea id="fromAddress">221B Koramangala, 5th Block
 Bengaluru, KA 560095
