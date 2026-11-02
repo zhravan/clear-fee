@@ -102,8 +102,14 @@ impl Database {
     }
     pub fn create_credit_note(&mut self,invoice:&str,number:&str,amount:i64,reason:&str)->Result<String>{
         if amount<=0||reason.trim().is_empty()||number.trim().is_empty(){return Err(DbError::Invalid("credit note requires a positive amount, number and reason".into()));}
+        let already_credited:i64=self.conn.query_row("SELECT COALESCE(SUM(amount_minor),0) FROM credit_notes WHERE invoice_id=?1 AND status='issued'",[invoice],|r|r.get(0))?;
+        let invoice_total:i64=self.conn.query_row("SELECT total_minor FROM invoices WHERE id=?1 AND status='issued'",[invoice],|r|r.get(0))
+            .optional()?.ok_or_else(||DbError::Invalid("credit notes can only reference issued invoices".into()))?;
+        if already_credited.checked_add(amount).filter(|v|*v<=invoice_total).is_none(){
+            return Err(DbError::Invalid("credit note exceeds the remaining invoice value".into()));
+        }
         let id=Uuid::new_v4().to_string();
-        self.conn.execute("INSERT INTO credit_notes(id,invoice_id,number,amount_minor,reason,status,created_at) SELECT ?1,id,?2,?3,?4,'issued',CURRENT_TIMESTAMP FROM invoices WHERE id=?5 AND status='issued'",params![id,number,amount,reason,invoice])?;
+        self.conn.execute("INSERT INTO credit_notes(id,invoice_id,number,amount_minor,reason,status,created_at) VALUES(?1,?2,?3,?4,?5,'issued',CURRENT_TIMESTAMP)",params![id,invoice,number,amount,reason])?;
         let count:i64=self.conn.query_row("SELECT changes()",[],|r|r.get(0))?;
         if count!=1{return Err(DbError::Invalid("credit notes can only reference issued invoices".into()));}
         Ok(id)
@@ -117,7 +123,21 @@ impl Database {
         if changed!=1{return Err(DbError::Invalid("invoice cannot be voided in its current state".into()));}
         tx.commit()?;Ok(())
     }
+    pub fn record_payment(&mut self,invoice:&str,amount:i64,method:&str,reference:&str,received_at:&str)->Result<String>{
+        if amount<=0 || method.trim().is_empty(){return Err(DbError::Invalid("payment amount and method are required".into()));}
+        let tx=self.conn.unchecked_transaction()?;
+        let status:String=tx.query_row("SELECT status FROM invoices WHERE id=?1",[invoice],|r|r.get(0))
+            .optional()?.ok_or_else(||DbError::Invalid("invoice not found".into()))?;
+        if status!="issued"{return Err(DbError::Invalid("payments can only be recorded against issued invoices".into()));}
+        let total:i64=tx.query_row("SELECT total_minor FROM invoices WHERE id=?1",[invoice],|r|r.get(0))?;
+        let paid:i64=tx.query_row("SELECT COALESCE(SUM(amount_minor),0) FROM payments WHERE invoice_id=?1 AND reversed_at IS NULL",[invoice],|r|r.get(0))?;
+        if paid.checked_add(amount).filter(|v|*v<=total).is_none(){return Err(DbError::Invalid("payment exceeds outstanding balance".into()));}
+        let id=Uuid::new_v4().to_string();
+        tx.execute("INSERT INTO payments(id,invoice_id,amount_minor,method,reference,received_at) VALUES(?1,?2,?3,?4,?5,?6)",params![id,invoice,amount,method,reference,received_at])?;
+        tx.commit()?;Ok(id)
+    }
     pub fn reverse_payment(&mut self,payment:&str,reason:&str)->Result<()>{
+
         if reason.trim().is_empty(){return Err(DbError::Invalid("payment reversal reason is required".into()));}
         let changed=self.conn.execute("UPDATE payments SET reversed_at=CURRENT_TIMESTAMP,reversal_reason=?2 WHERE id=?1 AND reversed_at IS NULL",params![payment,reason])?;
         if changed!=1{return Err(DbError::Invalid("payment is missing or already reversed".into()));}Ok(())
@@ -167,6 +187,23 @@ mod tests {
     #[test] fn rejects_negative_or_zero_quantities(){
         let items=vec![LineItem{description:"Bad".into(),quantity_milli:0,unit_price_minor:100}];
         assert!(calculate_totals(&items,0,0).is_err());
+    }
+    #[test] fn invoice_lifecycle_locks_after_issue_and_tracks_reversals(){
+        let dir=tempfile::tempdir().unwrap();let mut db=Database::open(&dir.path().join("life.sqlite")).unwrap();
+        db.conn.execute("INSERT INTO businesses(id,name) VALUES('b','Business')",[]).unwrap();
+        db.conn.execute("INSERT INTO clients(id,business_id,name) VALUES('c','b','Client')",[]).unwrap();
+        let draft=InvoiceDraft{id:None,business_id:"b".into(),client_id:"c".into(),number:"INV-2627/0001".into(),
+            issue_date:"2026-04-01".into(),due_date:"2026-04-30".into(),currency:"INR".into(),
+            items:vec![LineItem{description:"Service".into(),quantity_milli:1000,unit_price_minor:10000}],
+            discount_basis_points:0,tax_basis_points:0,client_snapshot:serde_json::json!({"name":"Client"}),
+            business_snapshot:serde_json::json!({"name":"Business"})};
+        let id=db.save_invoice(draft.clone()).unwrap();db.issue_invoice(&id).unwrap();
+        assert!(db.save_invoice(InvoiceDraft{id:Some(id.clone()),..draft}).is_err());
+        let payment=db.record_payment(&id,4000,"UPI","ref","2026-04-02").unwrap();
+        db.reverse_payment(&payment,"duplicate").unwrap();
+        let paid:i64=db.conn.query_row("SELECT COALESCE(SUM(amount_minor),0) FROM payments WHERE invoice_id=?1 AND reversed_at IS NULL",[&id],|r|r.get(0)).unwrap();
+        assert_eq!(paid,0);
+        assert!(db.void_invoice(&id,"cancelled").is_ok());
     }
     #[test] fn fiscal_year_changes_on_first_april(){
         let dir=tempfile::tempdir().unwrap();let mut db=Database::open(&dir.path().join("test.sqlite")).unwrap();
