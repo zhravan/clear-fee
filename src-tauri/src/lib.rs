@@ -43,6 +43,12 @@ fn void_invoice(state: State<'_, AppState>, invoice_id: String, reason: String) 
 }
 
 #[tauri::command]
+fn record_payment(state: State<'_, AppState>, invoice_id: String, amount_minor: i64, method: String, reference: String, received_at: String) -> Result<String, String> {
+    state.0.lock().map_err(|_| "Database lock poisoned".to_string())?
+        .record_payment(&invoice_id, amount_minor, &method, &reference, &received_at).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 fn reverse_payment(state: State<'_, AppState>, payment_id: String, reason: String) -> Result<(), String> {
     state.0.lock().map_err(|_| "Database lock poisoned".to_string())?
         .reverse_payment(&payment_id, &reason).map_err(|e| e.to_string())
@@ -78,7 +84,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             calculate_totals, next_invoice_number, save_invoice, issue_invoice,
-            create_credit_note, void_invoice, reverse_payment,
+            create_credit_note, void_invoice, record_payment, reverse_payment,
             backup_database, restore_database, export_invoice_json
         ])
         .run(tauri::generate_context!())
