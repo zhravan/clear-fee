@@ -3,7 +3,7 @@ mod db;
 use db::{Database, InvoiceDraft, InvoiceTotals};
 use serde_json::Value;
 use std::sync::Mutex;
-use tauri::State;
+use tauri::{Manager, State};
 
 struct AppState(Mutex<Database>);
 
