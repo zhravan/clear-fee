@@ -1,0 +1,21 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Clear-fee",
+  "version": "0.2.0",
+  "identifier": "app.clearfee.desktop",
+  "build": {
+    "frontendDist": "../",
+    "devUrl": "http://localhost:1420"
+  },
+  "app": {
+    "windows": [{ "title": "Clear-fee", "width": 1440, "height": 960, "minWidth": 960, "minHeight": 640 }],
+    "security": { "csp": "default-src 'self' asset: http://asset.localhost; img-src 'self' asset: http://asset.localhost data: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; connect-src ipc: http://ipc.localhost" }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["app", "dmg", "deb", "rpm", "appimage", "msi", "nsis"],
+    "category": "Business",
+    "shortDescription": "Local-first invoice management",
+    "longDescription": "Create, manage and archive invoices locally."
+  }
+}
